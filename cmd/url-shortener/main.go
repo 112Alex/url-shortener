@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"os"
 	"url-shortener/internal/config"
-	"url-shortener/internal/lib/logger/sl"
 	"url-shortener/internal/storage/sqlite"
 )
 
@@ -27,9 +26,16 @@ func main() {
 
 	storage, err := sqlite.New(cfg.StoragePath)
 	if err != nil {
-		log.Error("failed to init storage", sl.Err(err))
+		log.Error("Ошибка при инициализации хранилища", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
+	defer func() {
+		if err := storage.Close(); err != nil {
+			log.Error("Ошибка при закрытии хранилища", slog.String("error", err.Error()))
+		}
+	}()
+
+	fmt.Println("Хранилище успешно инициализировано!")
 
 	_ = storage
 
