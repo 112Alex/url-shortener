@@ -4,8 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	//_ "github.com/mattn/go-sqlite3"  register sqlite driver
-	_ "modernc.org/sqlite"
+	_ "modernc.org/sqlite" // init sqlite driver
 )
 
 type Storage struct {
@@ -27,6 +26,7 @@ func New(storagePath string) (*Storage, error) {
 		return nil, fmt.Errorf("%s: путь к базе данных не указан", op)
 	}
 
+	// Для sqlite используем драйвер modernc.org/sqlite
 	db, err := sql.Open("sqlite", storagePath)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
@@ -44,4 +44,31 @@ func New(storagePath string) (*Storage, error) {
 	}
 
 	return &Storage{db: db}, nil
+}
+
+func (s *Storage) SaveURL(urlToSave string, alias string) (int64, error) {
+	const op = "storage.sqlite.SaveURL"
+
+	// Проверяем, что urlToSave не пустой
+	if urlToSave == "" {
+		return 0, fmt.Errorf("%s: url не указан", op)
+	}
+
+	// Проверяем, что alias не пустой
+	if alias == "" {
+		return 0, fmt.Errorf("%s: alias не указан", op)
+	}
+
+	// Сохраняем URL в базе данных
+	result, err := s.db.Exec("INSERT INTO url (alias, url) VALUES (?, ?)", alias, urlToSave)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return id, nil
 }
