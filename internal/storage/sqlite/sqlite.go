@@ -3,6 +3,8 @@ package sqlite
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+	"url-shortener/internal/storage"
 
 	_ "modernc.org/sqlite" // init sqlite driver
 )
@@ -49,25 +51,24 @@ func New(storagePath string) (*Storage, error) {
 func (s *Storage) SaveURL(urlToSave string, alias string) (int64, error) {
 	const op = "storage.sqlite.SaveURL"
 
-	// Проверяем, что urlToSave не пустой
-	if urlToSave == "" {
-		return 0, fmt.Errorf("%s: url не указан", op)
-	}
-
-	// Проверяем, что alias не пустой
-	if alias == "" {
-		return 0, fmt.Errorf("%s: alias не указан", op)
-	}
-
-	// Сохраняем URL в базе данных
-	result, err := s.db.Exec("INSERT INTO url (alias, url) VALUES (?, ?)", alias, urlToSave)
+	stmt, err := s.db.Prepare("INSERT INTO url(alias, url) VALUES (?, ?)")
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
+	defer stmt.Close()
 
-	id, err := result.LastInsertId()
+	res, err := stmt.Exec(alias, urlToSave)
 	if err != nil {
+		// Проверяем ошибку на нарушение уникальности
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return 0, fmt.Errorf("%s: %w", op, storage.ErrURLExists)
+		}
 		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("%s: failed to insert id: %w", op, err)
 	}
 
 	return id, nil
