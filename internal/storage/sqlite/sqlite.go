@@ -89,6 +89,7 @@ func (s *Storage) GetURL(alias string) (string, error) {
 	}
 
 	var resURL string
+
 	err = stmt.QueryRow(alias).Scan(&resURL)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -99,3 +100,5 @@ func (s *Storage) GetURL(alias string) (string, error) {
 
 	return resURL, nil
 }
+
+// TODO: реализовать методы для удаления и обновления URL
