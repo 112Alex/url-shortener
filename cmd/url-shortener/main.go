@@ -68,6 +68,7 @@ func setupLogger(env string) *slog.Logger {
 
 	return log
 }
+
 func setupPrettySlog() *slog.Logger {
 	opts := slogpretty.PrettyHandlerOptions{
 		SlogOpts: &slog.HandlerOptions{

@@ -49,9 +49,11 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 		log.Info("request body decoded", slog.Any("request", req))
 
 		if err := validator.New().Struct(req); err != nil {
+			validateErr := err.(validator.ValidationErrors)
+
 			log.Error("invalid request", sl.Err(err))
 
-			render.JSON(w, r, resp.Error(("invalid request")))
+			render.JSON(w, r, resp.ValidationError(validateErr))
 
 			return
 		}
